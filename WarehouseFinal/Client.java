@@ -51,4 +51,8 @@ public class Client implements Serializable {
     public Iterator getWishlist() {
         return wishlist.getProducts();
     }
+
+    public void clearWishlist() {
+        wishlist = new Wishlist();
+    }
 }
