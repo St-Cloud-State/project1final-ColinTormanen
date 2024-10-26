@@ -4,7 +4,7 @@ import java.util.*;
 public class Wishlist {
 
     // Linked list to hold the wishlist
-    private List list = new LinkedList();
+    private List<Product> list = new LinkedList<>();
 
     // Default constructor
     public Wishlist() {
@@ -27,7 +27,7 @@ public class Wishlist {
     }
 
     public boolean removeProduct(String productId) {
-        Iterator iterator = list.iterator();
+        Iterator<Product> iterator = list.iterator();
         while(iterator.hasNext()) {
             Product product = iterator.next();
             if(product.getProductId() == productId) {

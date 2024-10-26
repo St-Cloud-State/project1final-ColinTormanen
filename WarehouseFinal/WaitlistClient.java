@@ -38,9 +38,6 @@ public class WaitlistClient
     @Override
     public String toString()
     {
-        return "WaitlistClient{" +
-                "clientId='" + clientId + ''' +
-                ", quantity=" + quantity +
-                '}';
+        return "Client ID: " + clientId + ", Quantity: " + quantity;
     }
 }

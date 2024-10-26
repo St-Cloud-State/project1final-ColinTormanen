@@ -7,6 +7,7 @@ public class Product implements Serializable
     private String productId;
     private int quantity;
     private double price;
+    private Waitlist waitlist = new Waitlist();
 
     // Constructor
     public Product(String productName, String productId, int quantity, double price)
@@ -15,6 +16,18 @@ public class Product implements Serializable
         this.productId = productId;
         this.quantity = quantity;
         this.price = price;
+    }
+
+    public void setWaitlist(Iterator<WaitlistClient> list) {
+        waitlist = new Waitlist(list);
+    }
+
+    public Iterator<WaitlistClient> getWaitlist() {
+        return waitlist.getWaitlist();
+    }
+
+    public boolean addToWaitlist(String clientId, int quantity) {
+        return waitlist.addClient(clientId, quantity);
     }
 
     // Getter for productName
@@ -80,7 +93,8 @@ public class Product implements Serializable
         ", Product Quantity: " + quantity;
     }
 
-    public boolean equals(int id)
+    
+    public boolean equals(String id)
     {
         return productId == id;
     }

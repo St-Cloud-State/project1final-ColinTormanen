@@ -1,3 +1,6 @@
+import java.io.*;
+import java.util.*;
+
 public class Warehouse implements Serializable {
 
     private static Warehouse warehouse;
@@ -37,8 +40,22 @@ public class Warehouse implements Serializable {
     }
 
     // Get client list
-    public Iterator getClients() {
+    public Iterator<Client> getClients() {
         return cList.getClients();
+    }
+
+    // Get client's wishlist
+    public Iterator<Product> getClientWishlist(String clientId) {
+        Client client = cList.searchClient(clientId);
+        if(client == null) return null;
+        return client.getWishlist();
+    } 
+
+    // Get client's invoices
+    public Iterator<String> getClientInvoices(String clientId) {
+        Client client = cList.searchClient(clientId);
+        if(client == null) return null;
+        return client.getInvoices();
     }
 
 
@@ -55,9 +72,16 @@ public class Warehouse implements Serializable {
     }
 
     // Get product list
-    public Iterator getProducts() {
+    public Iterator<Product> getProducts() {
         return pList.getProducts();
     }
+
+    // Get a Product's waitlist
+    public Iterator<WaitlistClient> getProductWaitlist(String productId) {
+        Product product = pList.searchProduct(productId);
+        if(product == null) return null;
+        return product.getWaitlist();
+    } 
 
 
     /**** Warehouse Operations ****/
@@ -67,8 +91,8 @@ public class Warehouse implements Serializable {
         Client client = cList.searchClient(clientId);
         Product product = pList.searchProduct(productId);
         if(client == null || product == null) return false;
-        product.setQuantity(quantity);
-        return client.addToWishlist(product);
+        Product productNew = new Product(product.getProductName(), product.getProductId(), quantity, product.getPrice());
+        return client.addToWishlist(productNew);
     }
 
     // Remove a product from a client's wishlist
@@ -85,33 +109,83 @@ public class Warehouse implements Serializable {
         return product.addToWaitlist(clientId, quantity);
     }
 
+    // Place a client order
     public boolean placeOrder(String clientId) {
+        String invoice = "";
         Client client = cList.searchClient(clientId);
         if(client == null) return false;
-        Iterator wishlist = client.getWishlist();
-        int totalCost;
+        Iterator<Product> wishlist = client.getWishlist();
+        int totalCost = 0;
         while(wishlist.hasNext()) {
             Product product = wishlist.next();
-            totalCost += product.getCost() * product.getQuantity();
             Product listProduct = pList.searchProduct(product.getProductId());
             if(listProduct == null) return false;
             int quantity = listProduct.getQuantity() - product.getQuantity();
+            invoice += product.getProductName() + " " + product.getProductId() + " ";
             if(quantity < 0) {
+                totalCost += product.getPrice() * listProduct.getQuantity();
+                
+                invoice += listProduct.getQuantity() + " " + product.getPrice() + "\n";
                 listProduct.addToWaitlist(client.getClientId(), -1*quantity);
                 listProduct.setQuantity(0);
             }
-            else listProduct.setQuantity(quantity);
+            else {
+                listProduct.setQuantity(quantity);
+                totalCost += product.getPrice() * product.getQuantity();
+                invoice += product.getQuantity() + " " + product.getPrice() + "\n";
+            }
         }
+        if(invoice.equals("")) return false;
+        invoice += "Total Cost: " + totalCost;
         client.addCredit(totalCost);
+        client.addInvoice(invoice);
+        client.clearWishlist();
+        return true;
     }
 
+    // Recieves a shipment of a product
     public boolean receiveShipment(String productId, int quantity) {
         Product product = pList.searchProduct(productId);
         if(product == null) return false;
-        Iterator waitlist = product.getWaitlist();
-        Waitlist copy = new Waitlist();
-        while(waitlist.hasNext()) {
-            // Need waitlist code to continue
+        Waitlist copy = new Waitlist(product.getWaitlist());
+        Iterator<WaitlistClient> waitlist = product.getWaitlist();
+        while(waitlist.hasNext() && quantity > 0) {
+            WaitlistClient client = waitlist.next();
+            Client realClient = cList.searchClient(client.getClientId());
+            String invoice = "";
+            if(realClient == null) return false;
+            if(quantity < client.getQuantity()) {
+                quantity = client.getQuantity() - quantity; 
+                copy.setQuantity(client.getClientId(), quantity);
+                invoice = product.getProductName() + " " + product.getProductId() + 
+                    " " + quantity + " " + product.getPrice() + "\n" + 
+                    "Total Cost: " + (quantity * product.getPrice());
+                realClient.addInvoice(invoice);
+                realClient.addCredit(quantity * product.getPrice());
+                quantity = 0;
+            }
+            else {
+                quantity -= client.getQuantity();
+                copy.removeClient(client.getClientId());
+                invoice = product.getProductName() + " " + product.getProductId() + " " +
+                    client.getQuantity() + " " + product.getPrice() + "\n" + "Total Cost: " +
+                    client.getQuantity() * product.getPrice();
+                realClient.addInvoice(invoice);
+                realClient.addCredit(client.getQuantity() * product.getPrice());
+            }
         }
+        product.setWaitlist(copy.getWaitlist());
+        if(quantity > 0) {
+            product.setQuantity(product.getQuantity() + quantity);
+        }
+        return true;
+    }
+
+    // Recieve a client payment
+    public boolean makePayment(String clientId, double amount) {
+        Client client = cList.searchClient(clientId);
+        if(client == null) return false;
+        client.addDebit(amount);
+        return true;
     }
 }

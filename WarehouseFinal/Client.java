@@ -7,12 +7,18 @@ public class Client implements Serializable {
     private String clientName;
     private static final String CLIENT_STRING = "C";
     private Wishlist wishlist;
+    private List<String> invoices;
+    private double creditBalance;
+    private double debitBalance;
 
     // Constructor to create a Client object with a name
     public Client(String clientName) {
         this.clientName = clientName;
         this.clientId = CLIENT_STRING + ClientIdServer.instance().getId(); // Generating unique client ID
         this.wishlist = new Wishlist();
+        this.invoices = new LinkedList<String>();
+        this.creditBalance = 0;
+        this.debitBalance = 0;
     }
 
     // Getter for client name
@@ -37,7 +43,8 @@ public class Client implements Serializable {
 
     @Override
     public String toString() {
-        return "Client Name: " + clientName + ", Client ID: " + clientId;
+        return "Client Name: " + clientName + ", Client ID: " + clientId + ", Cedit Balance: "
+            + creditBalance + ", Debit Balance: " + debitBalance;
     }
 
     public boolean addToWishlist(Product product) {
@@ -48,11 +55,36 @@ public class Client implements Serializable {
         return wishlist.removeProduct(productId);
     }
 
-    public Iterator getWishlist() {
+    public Iterator<Product> getWishlist() {
         return wishlist.getProducts();
     }
 
     public void clearWishlist() {
-        wishlist = new Wishlist();
+        this.wishlist = new Wishlist();
+    }
+
+    public boolean addInvoice(String invoice) {
+        invoices.add(invoice);
+        return true;
+    }
+
+    public Iterator<String> getInvoices() {
+        return invoices.iterator();
+    }
+
+    public void addCredit(double credit) {
+        if(debitBalance > credit) debitBalance = debitBalance - credit;
+        else {
+            debitBalance = 0;
+            creditBalance = credit + creditBalance - debitBalance;
+        }
+    }
+
+    public void addDebit(double debit) {
+        if(creditBalance > debit) creditBalance = creditBalance - debit;
+        else {
+            creditBalance = 0;
+            debitBalance = debit + debitBalance - creditBalance;
+        }
     }
 }

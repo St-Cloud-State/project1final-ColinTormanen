@@ -4,7 +4,7 @@ import java.io.*;
 public class ProductList implements Serializable {
 
     // Linked list to hold the products
-    private List products = new LinkedList();
+    private List<Product> products = new LinkedList<>();
 
     private static ProductList productList;
 
@@ -23,7 +23,7 @@ public class ProductList implements Serializable {
     }
 
     public Product searchProduct(String productId) {
-        Iterator iterator = products.iterator();
+        Iterator<Product> iterator = products.iterator();
         while(iterator.hasNext()) {
             Product product = iterator.next();
             if(product.getProductId().equals(productId)){
@@ -40,7 +40,7 @@ public class ProductList implements Serializable {
     }
 
     public boolean removeProduct(String productId) {
-        Iterator iterator = products.iterator();
+        Iterator<Product> iterator = products.iterator();
         while(iterator.hasNext()) {
             Product product = iterator.next();
             if(product.getProductId().equals(productId)) {
